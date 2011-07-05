@@ -123,9 +123,11 @@ class block_strathcourse_list extends block_list {
         global $CFG, $USER;
         $archives = split(',',$CFG->block_course_list_archiveservers);
         $auth = new auth_plugin_pegasus();
-        print_object($archives);
         if ($archives) {
+		$courses = array();
+		
             foreach($archives as $server) {
+
                 $url = 'http://'.$server.'/auth/pegasus/classes.php';
                 $mac_params['username'] = $USER->username;
                 $mac_params['timestamp'] = time();
@@ -135,10 +137,29 @@ class block_strathcourse_list extends block_list {
                
                 $req= $url.'?username='.$mac_params['username'].'&timestamp='.$mac_params['timestamp'].'&mac='.$mac;
                 $result = download_file_content($req);
-                p($result);
+		$lines = split("\n",$result);
+		//first one is always the result line
+		$lines = array_slice($lines,1);
+		foreach($lines as $line) {
+			if ($line != '') {
+				$csv = str_getcsv($line);
+        	                $courses[]="<a title=\"".format_string($csv[3])."\" ".
+                                   "href=\"http://{$server}/course/view.php?id={$csv[2]}$\">" 
+                                   .  format_string($csv[3]) . "</a>";
+			}
+		}		
             }
         }
-
+	if (count($courses) >0) {
+		$this->content->items[]='<div class="header">Previous Years</div>';
+		$this->content->icons[] ='';
+		$this->content->items[]='<strong>'.$server.'</strong>';
+		$this->content->icons[] ='';
+		foreach($courses as $c) {
+			$this->content->items[] = $c;
+			$this->content->icons[] = '';
+		}
+	}
     }
 
     function get_remote_courses() {
