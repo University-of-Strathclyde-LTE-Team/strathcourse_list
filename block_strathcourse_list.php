@@ -115,19 +115,24 @@ class block_strathcourse_list extends block_list {
                 $this->title = get_string('courses');
             }
         }
-
+        $this->get_archive_courses();
         return $this->content;
     }
     
     function get_archive_courses() {
         global $CFG, $USER;
-        $archives = split(',',$CFG->block_course_list_archiveservers);
+        //print_object($CFG->block_course_list_archiveservers);
+        $archiveservers = split("\n",$CFG->block_course_list_archiveservers);
+        $archiveservernames = split("\n",$CFG->block_course_list_archiveserversnames);
+        //print_object($archives);
         $auth = new auth_plugin_pegasus();
-        if ($archives) {
+        if ($archiveservers) {
 		$courses = array();
 		
-            foreach($archives as $server) {
-
+            //foreach($archives as $server) {
+            for($i = 0; $i < count($archiveservers);$i++) {
+                $servername = $archiveservernames[$i];
+                $server =$archiveservers[$i];
                 $url = 'http://'.$server.'/auth/pegasus/classes.php';
                 $mac_params['username'] = $USER->username;
                 $mac_params['timestamp'] = time();
@@ -137,27 +142,31 @@ class block_strathcourse_list extends block_list {
                
                 $req= $url.'?username='.$mac_params['username'].'&timestamp='.$mac_params['timestamp'].'&mac='.$mac;
                 $result = download_file_content($req);
-		$lines = split("\n",$result);
-		//first one is always the result line
-		$lines = array_slice($lines,1);
-		foreach($lines as $line) {
-			if ($line != '') {
-				$csv = str_getcsv($line);
-        	                $courses[]="<a title=\"".format_string($csv[3])."\" ".
-                                   "href=\"http://{$server}/course/view.php?id={$csv[2]}$\">" 
-                                   .  format_string($csv[3]) . "</a>";
-			}
-		}		
+                $lines = split("\n",$result);
+                //first one is always the result line
+                $lines = array_slice($lines,1);
+                $course[$servername] = array();
+                foreach($lines as $line) {
+                    if ($line != '') {
+                        $csv = str_getcsv($line);
+                        p($line);
+                        $courses[$servername][]="<a title=\"".format_string($csv[3])."\" ".
+                           "href=\"http://{$server}/course/view.php?id={$csv[2]}$\">" 
+                           .  format_string($csv[3]) . "</a>";
+                    }
+                }		
             }
         }
 	if (count($courses) >0) {
 		$this->content->items[]='<div class="header">Previous Years</div>';
 		$this->content->icons[] ='';
-		$this->content->items[]='<strong>'.$server.'</strong>';
-		$this->content->icons[] ='';
-		foreach($courses as $c) {
-			$this->content->items[] = $c;
-			$this->content->icons[] = '';
+		foreach($courses as $servername=>$stu_courses) {
+            $this->content->items[]='<strong>'.$servername.'</strong>';
+            $this->content->icons[] ='';
+            foreach($stu_courses as $c) {
+                $this->content->items[] = $c;
+                $this->content->icons[] = '';
+            }
 		}
 	}
     }

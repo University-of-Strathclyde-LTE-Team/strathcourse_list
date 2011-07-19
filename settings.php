@@ -9,5 +9,6 @@ $settings->add(new admin_setting_configselect('block_course_list_adminview', get
 $settings->add(new admin_setting_configcheckbox('block_course_list_hideallcourseslink', get_string('hideallcourseslink', 'block_course_list'),
                    get_string('confighideallcourseslink', 'block_course_list'), 0));
 
-$settings->add(new admin_setting_configtext('block_course_list_archiveservers','Archive Servers','List of servers that are archives',''));
+$settings->add(new admin_setting_configtextarea('block_course_list_archiveservers','Archive Servers',get_string('archiveservers_help','block_strathcourse_list'),''));
+$settings->add(new admin_setting_configtextarea('block_course_list_archiveserversnames','Archive Server Names',get_string('archiveservernames_help','block_strathcourse_list'),''));
 ?>
