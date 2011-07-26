@@ -149,7 +149,7 @@ class block_strathcourse_list extends block_list {
                 foreach($lines as $line) {
                     if ($line != '') {
                         $csv = str_getcsv($line);
-                        p($line);
+                        //p($line);
                         $courses[$servername][]="<a title=\"".format_string($csv[3])."\" ".
                            "href=\"http://{$server}/course/view.php?id={$csv[2]}$\">" 
                            .  format_string($csv[3]) . "</a>";
