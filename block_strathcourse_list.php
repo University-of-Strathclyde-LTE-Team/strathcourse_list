@@ -4,11 +4,18 @@ include_once($CFG->dirroot . '/course/lib.php');
 require_once($CFG->dirroot . '/auth/pegasus/auth.php');
 require_once($CFG->libdir . '/filelib.php');
 define('BLOCK_STRATHCOURSE_LIST_PROG_SITE','/^[\d]{4}-[\d]{1}-[\d]{1}/');
+
 class block_strathcourse_list extends block_list {
     var $degree_course_instance =false;
+    var $userIsLta= false;
     function init() {
+        global $USER;
         $this->title = get_string('courses').'(Strathclyde)';
         $this->version = 2007101509;
+        
+	    if ($r = get_record('role','shortname','lta') ) {
+			$this->userIsLta = user_has_role_assignment($USER->id, $r->id); 
+        }
     }
     
     function has_config() {
@@ -17,7 +24,12 @@ class block_strathcourse_list extends block_list {
     function specialization() {
         global $CFG;
         //$this->title = "<img src=\"$CFG->wwwroot/blocks/strathcourse_list/course.gif\" class=\"strathcourse\" alt=\"".get_string("coursecategory")."\" />Courses";            
-        $this->title= get_string('mycourses');
+        if ($this->userIsLta) {
+            $this->title= get_string('ltacourses','block_strathcourse_list');
+        }
+        else {
+            $this->title= get_string('mycourses');
+        }
     }
     function hide_header() {
         return false;//$this->degree_course_instance;
@@ -29,20 +41,18 @@ class block_strathcourse_list extends block_list {
         if($this->content !== NULL) {
             return $this->content;
         }
-        $userIsLta= false;
-	    if ($r = get_record('role','shortname','lta') ) {
-			$userIsLta = user_has_role_assignment($USER->id, $r->id); 
-            if ($userIsLta) {
-                $this->content = new stdClass;
-                $this->content->items = array(
-                    "<a href=\"$CFG->wwwroot/course/search.php\">".get_string("search")."</a>",
-                    "<a href=\"$CFG->wwwroot/course/index.php\">".get_string("fulllistofcourses")."</a>"
-                );
-                $this->content->icons = array('','');
-                $this->content->footer = '';
-                return $this->content;
-            }
+
+        if ($this->userIsLta) {
+            $this->content = new stdClass;
+            $this->content->items = array(
+                "<a href=\"$CFG->wwwroot/course/search.php\">".get_string("search")."</a>",
+                "<a href=\"$CFG->wwwroot/course/index.php\">".get_string("fulllistofcourses")."</a>"
+            );
+            $this->content->icons = array('','');
+            $this->content->footer = '';
+            return $this->content;
         }
+        
 
         $this->content = new stdClass;
         $this->content->items = array();
