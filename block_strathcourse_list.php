@@ -3,7 +3,9 @@
 include_once($CFG->dirroot . '/course/lib.php');
 require_once($CFG->dirroot . '/auth/pegasus/auth.php');
 require_once($CFG->libdir . '/filelib.php');
+define('BLOCK_STRATHCOURSE_LIST_PROG_SITE','/^[\d]{4}-[\d]{1}-[\d]{1}/');
 class block_strathcourse_list extends block_list {
+    var $degree_course_instance =false;
     function init() {
         $this->title = get_string('courses').'(Strathclyde)';
         $this->version = 2007101509;
@@ -14,15 +16,32 @@ class block_strathcourse_list extends block_list {
     }
     function specialization() {
         global $CFG;
-        $this->title = "<img src=\"$CFG->wwwroot/blocks/strathcourse_list/course.gif\" class=\"strathcourse\" alt=\"".get_string("coursecategory")."\" />Courses";            
+        //$this->title = "<img src=\"$CFG->wwwroot/blocks/strathcourse_list/course.gif\" class=\"strathcourse\" alt=\"".get_string("coursecategory")."\" />Courses";            
+        $this->title= get_string('mycourses');
     }
-    
+    function hide_header() {
+        return false;//$this->degree_course_instance;
+    }   
      
     function get_content() {
         global $THEME, $CFG, $USER;
 
         if($this->content !== NULL) {
             return $this->content;
+        }
+        $userIsLta= false;
+	    if ($r = get_record('role','shortname','lta') ) {
+			$userIsLta = user_has_role_assignment($USER->id, $r->id); 
+            if ($userIsLta) {
+                $this->content = new stdClass;
+                $this->content->items = array(
+                    "<a href=\"$CFG->wwwroot/course/search.php\">".get_string("search")."</a>",
+                    "<a href=\"$CFG->wwwroot/course/index.php\">".get_string("fulllistofcourses")."</a>"
+                );
+                $this->content->icons = array('','');
+                $this->content->footer = '';
+                return $this->content;
+            }
         }
 
         $this->content = new stdClass;
@@ -39,7 +58,7 @@ class block_strathcourse_list extends block_list {
                $adminseesall = false;
            }
         }
-
+        $this->degree_course_instance = false;
         if (empty($CFG->disablemycourses) and 
             !empty($USER->id) and 
             !(has_capability('moodle/course:update', get_context_instance(CONTEXT_SYSTEM)) and $adminseesall) and
@@ -47,13 +66,19 @@ class block_strathcourse_list extends block_list {
             if ($courses = get_my_courses($USER->id, 'visible DESC, fullname ASC')) {
                 $counter = 0;
                 foreach ($courses as $course) {
+                    //echo $course->idnumber;
                     if ($course->id == SITEID) {
+                        continue;
+                    }
+                    if (preg_match(BLOCK_STRATHCOURSE_LIST_PROG_SITE,$course->idnumber)) {
+                        //found the user's course class
+                        $this->degree_course_instance = $course;
                         continue;
                     }
                     $linkcss = $course->visible ? "" : " class=\"dimmed\" ";
                     $this->content->items[]="<a $linkcss title=\"" . format_string($course->shortname) . "\" ".
                                "href=\"$CFG->wwwroot/course/view.php?id=$course->id\">" . format_string($course->fullname) . "</a>";
-                    $this->content->icons[]=$icon;
+                    //$this->content->icons[]=$icon;
                     $counter++;
                 }
                 $this->title = get_string('mycourses');
@@ -64,11 +89,12 @@ class block_strathcourse_list extends block_list {
             }
             $this->get_remote_courses();
             $this->get_archive_courses();
+            $this->display_degree_course();
             if ($this->content->items) { // make sure we don't return an empty list
                 return $this->content;
             }
         }
-
+        $this->degree_course_instance = false;
         $categories = get_categories("0");  // Parent = 0   ie top-level categories only
         if ($categories) {   //Check we have categories
             if (count($categories) > 1 || (count($categories) == 1 && count_records('course') > 200)) {     // Just print top level category links
@@ -88,6 +114,16 @@ class block_strathcourse_list extends block_list {
 
                 if ($courses) {
                     foreach ($courses as $course) {
+                        echo $course->idnumber;
+                        if ($course->id == SITEID) {
+                            continue;
+                        }
+                        if (preg_match(BLOCK_STRATHCOURSE_LIST_PROG_SITE,$course->idnumber)) {
+                            //found the user's course class
+                            $this->degree_course_instance = $course;
+                            
+                            continue;
+                        }
                         $linkcss = $course->visible ? "" : " class=\"dimmed\" ";
 
                         $this->content->items[]="<a $linkcss title=\""
@@ -116,6 +152,18 @@ class block_strathcourse_list extends block_list {
             }
         }
         $this->get_archive_courses();
+        /*
+        if ($this->degree_course_instance) {
+            array_unshift($this->content->items, 
+                '<h3>Degree Programme Site</h3>',
+                "<a $linkcss title=\"" . format_string($this->degree_course_instance>shortname) . "\" ".
+                           "href=\"$CFG->wwwroot/course/view.php?id={$this->degree_course_instance->id}\">" . format_string($this->degree_course_instance>fullname) . "</a>",
+                '<div class="title">Classes</div>'
+           );
+            array_unshift($this->content->icons[],$icon);
+        }
+        */
+        $this->display_degree_course();
         return $this->content;
     }
     
@@ -133,28 +181,30 @@ class block_strathcourse_list extends block_list {
             for($i = 0; $i < count($archiveservers);$i++) {
                 $servername = $archiveservernames[$i];
                 $server =$archiveservers[$i];
-                $url = 'http://'.$server.'/auth/pegasus/classes.php';
-                $mac_params['username'] = $USER->username;
-                $mac_params['timestamp'] = time();
-                $mac = $auth->getMAC($mac_params);
-                //$mac_params['mac'] = $mac;
-                
-               
-                $req= $url.'?username='.$mac_params['username'].'&timestamp='.$mac_params['timestamp'].'&mac='.$mac;
-                $result = download_file_content($req);
-                $lines = split("\n",$result);
-                //first one is always the result line
-                $lines = array_slice($lines,1);
-                $course[$servername] = array();
-                foreach($lines as $line) {
-                    if ($line != '') {
-                        $csv = str_getcsv($line);
-                        //p($line);
-                        $courses[$servername][]="<a title=\"".format_string($csv[3])."\" ".
-                           "href=\"http://{$server}/course/view.php?id={$csv[2]}$\">" 
-                           .  format_string($csv[3]) . "</a>";
-                    }
-                }		
+                if ($server != "") {
+                    $url = 'http://'.$server.'/auth/pegasus/classes.php';
+                    $mac_params['username'] = $USER->username;
+                    $mac_params['timestamp'] = time();
+                    $mac = $auth->getMAC($mac_params);
+                    //$mac_params['mac'] = $mac;
+                    
+                   
+                    $req= $url.'?username='.$mac_params['username'].'&timestamp='.$mac_params['timestamp'].'&mac='.$mac;
+                    $result = download_file_content($req);
+                    $lines = split("\n",$result);
+                    //first one is always the result line
+                    $lines = array_slice($lines,1);
+                    $course[$servername] = array();
+                    foreach($lines as $line) {
+                        if ($line != '') {
+                            $csv = str_getcsv($line);
+                            //p($line);
+                            $courses[$servername][]="<a title=\"".format_string($csv[3])."\" ".
+                               "href=\"http://{$server}/course/view.php?id={$csv[2]}$\">" 
+                               .  format_string($csv[3]) . "</a>";
+                        }
+                    }	
+                }   	
             }
         }
 	if (count($courses) >0) {
@@ -171,6 +221,22 @@ class block_strathcourse_list extends block_list {
 	}
     }
 
+    function display_degree_course() {
+        global $CFG;
+        $strDegProg = get_string('degreeprogrammesite','block_strathcourse_list');
+        $strClasses = get_string('courses');
+        $linkcss = $this->degree_course_instance->visible ? "" : " class=\"dimmed\" ";
+        if ($this->degree_course_instance) {
+            array_unshift(
+                $this->content->items, 
+                //"<div class='block_strathcourse_list_degreeprogramme'>{$strDegProg}</div>",
+                "<a $linkcss title=\"" . format_string($this->degree_course_instance->shortname) . "\" ".
+                           "href=\"$CFG->wwwroot/course/view.php?id={$this->degree_course_instance->id}\">" . format_string($this->degree_course_instance->fullname) . "</a>",
+                "<div class='block_strathcourse_list_classes'>{$strClasses}</div>"
+            );
+            //array_unshift($this->content->icons[],$icon);
+        }
+    }
     function get_remote_courses() {
         global $THEME, $CFG, $USER;
 
