@@ -44,8 +44,10 @@ class block_strathcourse_list extends block_list {
 
         if ($this->userIsLta) {
             $this->content = new stdClass;
+            $searchbox = "<form action='{$CFG->wwwroot}/course/search.php'><input type='text' name='search' /><input type='submit' value='Search'/><input type='reset' value='Reset'/></form>";
             $this->content->items = array(
-                "<a href=\"$CFG->wwwroot/course/search.php\">".get_string("search")."</a>",
+                //"<a href=\"$CFG->wwwroot/course/search.php\">".get_string("search")."</a>",
+                $searchbox,
                 "<a href=\"$CFG->wwwroot/course/index.php\">".get_string("fulllistofcourses")."</a>"
             );
             $this->content->icons = array('','');
