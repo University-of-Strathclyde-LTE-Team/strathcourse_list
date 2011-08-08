@@ -237,7 +237,10 @@ class block_strathcourse_list extends block_list {
         global $CFG;
         $strDegProg = get_string('degreeprogrammesite','block_strathcourse_list');
         $strClasses = get_string('courses');
-        $linkcss = $this->degree_course_instance->visible ? "" : " class=\"dimmed\" ";
+        $linkcss ='';
+        if (!empty($this->degree_course_instance)) {
+        	$linkcss = $this->degree_course_instance->visible ? "" : " class=\"dimmed\" ";
+        }
         if ($this->degree_course_instance) {
             array_unshift(
                 $this->content->items, 
