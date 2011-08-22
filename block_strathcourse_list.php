@@ -194,15 +194,27 @@ class block_strathcourse_list extends block_list {
                 $servername = $archiveservernames[$i];
                 $server =$archiveservers[$i];
                 if ($server != "") {
-                    $url = 'http://'.$server.'/auth/pegasus/classes.php';
-                    $mac_params['username'] = $USER->username;
-                    $mac_params['timestamp'] = time();
-                    $mac = $auth->getMAC($mac_params);
-                    //$mac_params['mac'] = $mac;
-                    
-                   
-                    $req= $url.'?username='.$mac_params['username'].'&timestamp='.$mac_params['timestamp'].'&mac='.$mac;
-                    $result = download_file_content($req);
+                	$servertype = strpos($server, 'spider') !== false ? 'spider' : 'moodle';
+                	if($servertype == 'spider') {
+                		$url = 'http://'.$server.'/spider/interface/getClasses_myplace.php';
+                		$username = str_replace('@strath.ac.uk', '', $USER->username);
+                		$req = $url.'?username='.$username;
+                	} else {
+	                    $url = 'http://'.$server.'/auth/pegasus/classes.php';
+	                    $mac_params['username'] = $USER->username;
+	                    $mac_params['timestamp'] = time();
+	                    $mac = $auth->getMAC($mac_params);
+	                    //$mac_params['mac'] = $mac;
+	                    
+                    	$req= $url.'?username='.$mac_params['username'].'&timestamp='.$mac_params['timestamp'].'&mac='.$mac;
+                	}
+                	
+                    $result = download_file_content($req, null, null, false, 5);
+                    // Show error message if we don't get content
+                    if($result === false) {
+                    	$courses[$servername][]= "Server unavailable.";
+                    	continue;
+                    }
                     $lines = split("\n",$result);
                     //first one is always the result line
                     $lines = array_slice($lines,1);
@@ -211,9 +223,21 @@ class block_strathcourse_list extends block_list {
                         if ($line != '') {
                             $csv = str_getcsv($line);
                             //p($line);
-                            $courses[$servername][]="<a title=\"".format_string($csv[3])."\" ".
-                               "href=\"http://{$server}/course/view.php?id={$csv[2]}$\">" 
-                               .  format_string($csv[3]) . "</a>";
+                            if($servertype == 'spider') {
+                            	$code = trim($csv[0]);
+                            	if(!isset($csv[1])) {
+                            		$title = $code;
+                            	} else {
+                            		$title = trim($csv[1]);
+                            	}
+                            	$courses[$servername][]='<a title="'.$title.'" href="http://'.
+                            	    $server.'/spider/spider/showClass.php?class='.$code.'">'.
+                            	    $title. '</a>';
+                            } else {
+	                            $courses[$servername][]="<a title=\"".format_string($csv[3])."\" ".
+	                               "href=\"http://{$server}/course/view.php?id={$csv[2]}$\">" 
+	                               .  format_string($csv[3]) . "</a>";
+                            }
                         }
                     }	
                 }   	
