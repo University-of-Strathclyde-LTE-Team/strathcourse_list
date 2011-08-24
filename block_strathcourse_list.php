@@ -224,11 +224,14 @@ class block_strathcourse_list extends block_list {
                             $csv = str_getcsv($line);
                             //p($line);
                             if($servertype == 'spider') {
+                            	if(!isset($csv[0])) {
+                            		continue;
+                            	}
                             	$code = trim($csv[0]);
                             	if(!isset($csv[1])) {
                             		$title = $code;
                             	} else {
-                            		$title = trim($csv[1]);
+                            		$title = $code.': '.trim($csv[1]);
                             	}
                             	$courses[$servername][]='<a title="'.$title.'" href="http://'.
                             	    $server.'/spider/spider/showClass.php?class='.$code.'">'.
@@ -250,7 +253,7 @@ class block_strathcourse_list extends block_list {
             $this->content->items[]='<strong>'.$servername.'</strong>';
             $this->content->icons[] ='';
             foreach($stu_courses as $c) {
-                $this->content->items[] = $c;
+                $this->content->items[] = stripslashes($c);
                 $this->content->icons[] = '';
             }
 		}
