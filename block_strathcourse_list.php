@@ -85,6 +85,10 @@ class block_strathcourse_list extends block_list {
                 "<a href=\"$CFG->wwwroot/course/index.php\">".get_string("fulllistofcourses")."</a>"
             );
             $this->content->icons = array('','');
+            if ($this->showArchives) {
+            	$this->get_archive_courses();
+            }
+
             $this->content->footer = $strPrefForm;
             return $this->content;
         }
