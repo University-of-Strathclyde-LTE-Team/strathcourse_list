@@ -6,16 +6,42 @@ require_once($CFG->libdir . '/filelib.php');
 define('BLOCK_STRATHCOURSE_LIST_PROG_SITE','/^[\d]{4}-[\d]{1}-[\d]{1}/');
 
 class block_strathcourse_list extends block_list {
-    var $degree_course_instance =false;
+    var $degree_course_instance =array();
     var $userIsLta= false;
+    var $showArchives= false;
     function init() {
         global $USER;
         $this->title = get_string('courses').'(Strathclyde)';
         $this->version = 2007101509;
         
+        /*
 	    if ($r = get_record('role','shortname','lta') ) {
 			$this->userIsLta = user_has_role_assignment($USER->id, $r->id); 
+        }*/
+        
+        if (!empty($_POST['block_strathcourse_list_updatepref'])) {
+        	$ui_opt = optional_param('block_strathcourse_list_search_ui',false);
+        	//echo "UI:$ui_opt.";
+       		switch(strtolower($ui_opt)) {
+	        	case 'on':
+	        		set_user_preference('block_strathcourse_list_showsearch_ui', true);
+	        		break;
+	        	default:
+	        		set_user_preference('block_strathcourse_list_showsearch_ui', false);
+	        		break;
+	        }
+	        $archive_opt = optional_param('block_strathcourse_list_show_archives',false);
+			switch(strtolower($archive_opt)) {
+	        	case 'on':
+	        		set_user_preference('block_strathcourse_list_show_archives', true);
+	        		break;
+	        	default:
+	        		set_user_preference('block_strathcourse_list_show_archives', false);
+	        		break;
+	        }
         }
+        $this->userIsLta = get_user_preferences('block_strathcourse_list_showsearch_ui',false);
+        $this->showArchives=get_user_preferences('block_strathcourse_list_show_archives',false);
     }
     
     function has_config() {
@@ -41,7 +67,15 @@ class block_strathcourse_list extends block_list {
         if($this->content !== NULL) {
             return $this->content;
         }
-
+		$strSavePrefs = get_string('savepreferences');
+		$strHideList = get_string('hide_course_list','block_strathcourse_list');
+		$strShowArchives = get_string('show_archive_servers','block_strathcourse_list');
+		$ui_checked = $this->userIsLta?"checked":'';
+		$archived_checked = $this->showArchives?"checked":'';
+		$strPrefForm = "<form action='' method='post'>{$strHideList}<input type='hidden' name='block_strathcourse_list_updatepref' value='1' /><input type='checkbox' name='block_strathcourse_list_search_ui' {$ui_checked}/><br/>
+		{$strShowArchives}<input type='checkbox' name='block_strathcourse_list_show_archives' {$archived_checked}/>
+		<input type='submit' value='{$strSavePrefs}'/></form>";
+        
         if ($this->userIsLta) {
             $this->content = new stdClass;
             $searchbox = "<form action='{$CFG->wwwroot}/course/search.php'><input type='text' name='search' /><input type='submit' value='Search'/><input type='reset' value='Reset'/></form>";
@@ -51,7 +85,7 @@ class block_strathcourse_list extends block_list {
                 "<a href=\"$CFG->wwwroot/course/index.php\">".get_string("fulllistofcourses")."</a>"
             );
             $this->content->icons = array('','');
-            $this->content->footer = '';
+            $this->content->footer = $strPrefForm;
             return $this->content;
         }
         
@@ -70,7 +104,7 @@ class block_strathcourse_list extends block_list {
                $adminseesall = false;
            }
         }
-        $this->degree_course_instance = false;
+        $this->degree_course_instance = array();
         if (empty($CFG->disablemycourses) and 
             !empty($USER->id) and 
             !(has_capability('moodle/course:update', get_context_instance(CONTEXT_SYSTEM)) and $adminseesall) and
@@ -84,7 +118,7 @@ class block_strathcourse_list extends block_list {
                     }
                     if (preg_match(BLOCK_STRATHCOURSE_LIST_PROG_SITE,$course->idnumber)) {
                         //found the user's course class
-                        $this->degree_course_instance = $course;
+                        $this->degree_course_instance[] = $course;
                         continue;
                     }
                     $linkcss = $course->visible ? "" : " class=\"dimmed\" ";
@@ -98,9 +132,14 @@ class block_strathcourse_list extends block_list {
                 if (has_capability('moodle/course:update', get_context_instance(CONTEXT_SYSTEM)) || empty($CFG->block_course_list_hideallcourseslink)) {
                     $this->content->footer = "<a href=\"$CFG->wwwroot/course/index.php\">".get_string("fulllistofcourses")."</a> ...";
                 }
+               // if (count($this->content->items) >20) {
+	                $this->content->footer .=$strPrefForm;
+                //}
             }
             $this->get_remote_courses();
-            $this->get_archive_courses();
+            if ($this->showArchives) {
+            	$this->get_archive_courses();
+            }
             $this->display_degree_course();
             if ($this->content->items) { // make sure we don't return an empty list
                 return $this->content;
@@ -132,7 +171,7 @@ class block_strathcourse_list extends block_list {
                         }
                         if (preg_match(BLOCK_STRATHCOURSE_LIST_PROG_SITE,$course->idnumber)) {
                             //found the user's course class
-                            $this->degree_course_instance = $course;
+                            $this->degree_course_instance[] = $course;
                             
                             continue;
                         }
@@ -163,7 +202,11 @@ class block_strathcourse_list extends block_list {
                 $this->title = get_string('courses');
             }
         }
-        $this->get_archive_courses();
+            if ($this->showArchives) {
+            	$this->get_archive_courses();
+            }
+        
+        //$this->get_archive_courses();
         /*
         if ($this->degree_course_instance) {
             array_unshift($this->content->items, 
@@ -262,22 +305,23 @@ class block_strathcourse_list extends block_list {
 
     function display_degree_course() {
         global $CFG;
+       // print_r($this->degree_course_instance);
         $strDegProg = get_string('degreeprogrammesite','block_strathcourse_list');
         $strClasses = get_string('courses');
-        $linkcss ='';
-        if (!empty($this->degree_course_instance)) {
-        	$linkcss = $this->degree_course_instance->visible ? "" : " class=\"dimmed\" ";
-        }
-        if ($this->degree_course_instance) {
+		foreach($this->degree_course_instance as $d){
+       	 	$linkcss ='';
+        	$linkcss = $d->visible ? "" : " class=\"dimmed\" ";
             array_unshift(
                 $this->content->items, 
-                //"<div class='block_strathcourse_list_degreeprogramme'>{$strDegProg}</div>",
-                "<a $linkcss title=\"" . format_string($this->degree_course_instance->shortname) . "\" ".
-                           "href=\"$CFG->wwwroot/course/view.php?id={$this->degree_course_instance->id}\">" . format_string($this->degree_course_instance->fullname) . "</a>",
-                "<div class='block_strathcourse_list_classes'>{$strClasses}</div>"
+                "<a $linkcss title=\"" . format_string($d->shortname) . "\" ".
+                           "href=\"$CFG->wwwroot/course/view.php?id={$d->id}\">" . format_string($d->fullname) . "</a>"
+                
             );
-            //array_unshift($this->content->icons[],$icon);
-        }
+		}
+		array_unshift(
+                $this->content->items, 
+                "<div class='block_strathcourse_list_classes'>{$strClasses}</div>"
+		);
     }
     function get_remote_courses() {
         global $THEME, $CFG, $USER;

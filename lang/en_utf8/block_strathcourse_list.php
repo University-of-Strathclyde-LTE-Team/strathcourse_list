@@ -6,3 +6,5 @@ $string['archiveservernames_help']  =   'There should be a name for each server 
 $string['degreeprogrammesite']      =   'Course';
 $string['youreanlta']   =   'You are an LTA';
 $string['ltacourses']   =   'LTA Course Access';
+$string['show_archive_servers']	=	'Show Previous Years';
+$string['hide_course_list']	='Hide Class List';
