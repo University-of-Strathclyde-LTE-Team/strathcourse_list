@@ -124,7 +124,7 @@ class block_strathcourse_list extends block_list {
                     $linkcss = $course->visible ? "" : " class=\"dimmed\" ";
                     $this->content->items[]="<a $linkcss title=\"" . format_string($course->shortname) . "\" ".
                                "href=\"$CFG->wwwroot/course/view.php?id=$course->id\">" . format_string($course->fullname) . "</a>";
-                    //$this->content->icons[]=$icon;
+                    $this->content->icons[]=$icon;
                     $counter++;
                 }
                 $this->title = get_string('mycourses');
@@ -209,6 +209,7 @@ class block_strathcourse_list extends block_list {
         //$this->get_archive_courses();
         /*
         if ($this->degree_course_instance) {
+//	    array_unshift($this->content->icons,'');
             array_unshift($this->content->items, 
                 '<h3>Degree Programme Site</h3>',
                 "<a $linkcss title=\"" . format_string($this->degree_course_instance>shortname) . "\" ".
@@ -312,6 +313,8 @@ class block_strathcourse_list extends block_list {
 		foreach($this->degree_course_instance as $d){
        	 	$linkcss ='';
         	$linkcss = $d->visible ? "" : " class=\"dimmed\" ";
+		array_unshift($this->content->icons,'');
+
             array_unshift(
                 $this->content->items, 
                 "<a $linkcss title=\"" . format_string($d->shortname) . "\" ".
@@ -319,6 +322,7 @@ class block_strathcourse_list extends block_list {
                 
             );
 		}
+		array_unshift($this->content->icons,'');
 		array_unshift(
                 $this->content->items, 
                 "<div class='block_strathcourse_list_classes'>{$strClasses}</div>"
