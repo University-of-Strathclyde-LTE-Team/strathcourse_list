@@ -308,6 +308,7 @@ class block_strathcourse_list extends block_list {
        // print_r($this->degree_course_instance);
         $strDegProg = get_string('degreeprogrammesite','block_strathcourse_list');
         $strClasses = get_string('courses');
+	if ($this->degree_course_instance){
 		foreach($this->degree_course_instance as $d){
        	 	$linkcss ='';
         	$linkcss = $d->visible ? "" : " class=\"dimmed\" ";
@@ -322,6 +323,7 @@ class block_strathcourse_list extends block_list {
                 $this->content->items, 
                 "<div class='block_strathcourse_list_classes'>{$strClasses}</div>"
 		);
+	}
     }
     function get_remote_courses() {
         global $THEME, $CFG, $USER;
