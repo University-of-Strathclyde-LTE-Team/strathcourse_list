@@ -137,9 +137,10 @@ class block_strathcourse_list extends block_list {
                     $this->content->footer = "<a href=\"$CFG->wwwroot/course/index.php\">".get_string("fulllistofcourses")."</a> ...";
                 }
                // if (count($this->content->items) >20) {
-	                $this->content->footer .=$strPrefForm;
+	                
                 //}
             }
+            $this->content->footer .=$strPrefForm;
             $this->get_remote_courses();
             if ($this->showArchives) {
             	$this->get_archive_courses();
@@ -169,7 +170,7 @@ class block_strathcourse_list extends block_list {
 
                 if ($courses) {
                     foreach ($courses as $course) {
-                        echo $course->idnumber;
+                        ///echo $course->idnumber;
                         if ($course->id == SITEID) {
                             continue;
                         }
@@ -313,25 +314,25 @@ class block_strathcourse_list extends block_list {
        // print_r($this->degree_course_instance);
         $strDegProg = get_string('degreeprogrammesite','block_strathcourse_list');
         $strClasses = get_string('courses');
-	if ($this->degree_course_instance){
-		foreach($this->degree_course_instance as $d){
-       	 	$linkcss ='';
-        	$linkcss = $d->visible ? "" : " class=\"dimmed\" ";
-		array_unshift($this->content->icons,'');
-
-            array_unshift(
-                $this->content->items, 
-                "<a $linkcss title=\"" . format_string($d->shortname) . "\" ".
-                           "href=\"$CFG->wwwroot/course/view.php?id={$d->id}\">" . format_string($d->fullname) . "</a>"
-                
-            );
-		}
-		array_unshift($this->content->icons,'');
-		array_unshift(
+		if (count($this->degree_course_instance)>0){
+			foreach($this->degree_course_instance as $d){
+	       	 	$linkcss ='';
+	        	$linkcss = $d->visible ? "" : " class=\"dimmed\" ";
+				array_unshift($this->content->icons,'');
+	
+	            array_unshift(
+	                $this->content->items, 
+	                "<a $linkcss title=\"" . format_string($d->shortname) . "\" ".
+	                           "href=\"$CFG->wwwroot/course/view.php?id={$d->id}\">" . format_string($d->fullname) . "</a>"
+	                
+	            );
+			}
+			array_unshift($this->content->icons,'');
+			array_unshift(
                 $this->content->items, 
                 "<div class='block_strathcourse_list_classes'>{$strClasses}</div>"
-		);
-	}
+			);
+		}
     }
     function get_remote_courses() {
         global $THEME, $CFG, $USER;
