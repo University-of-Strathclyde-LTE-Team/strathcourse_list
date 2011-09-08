@@ -314,7 +314,7 @@ class block_strathcourse_list extends block_list {
        // print_r($this->degree_course_instance);
         $strDegProg = get_string('degreeprogrammesite','block_strathcourse_list');
         $strClasses = get_string('courses');
-		if (count($this->degree_course_instance)>0){
+		if ($this->degree_course_instance && count($this->degree_course_instance)>0){
 			foreach($this->degree_course_instance as $d){
 	       	 	$linkcss ='';
 	        	$linkcss = $d->visible ? "" : " class=\"dimmed\" ";
