@@ -12,7 +12,7 @@ class block_strathcourse_list extends block_list {
     function init() {
         global $USER;
         $this->title = get_string('courses').'(Strathclyde)';
-        $this->version = 2007101509;
+        $this->version = 2011091400;
         
         /*
 	    if ($r = get_record('role','shortname','lta') ) {
