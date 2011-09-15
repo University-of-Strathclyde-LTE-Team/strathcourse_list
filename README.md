@@ -23,10 +23,13 @@ Replacing Moodle My Courses Block
 The following SQL statements *should* cause all My Courses blocks to change...use at your own risk
 
 1. Get the ID of the Strathcourse_list block
-    SELECT id FROM `classes_michael`.`mdl_block` where name ='strathcourse_list';
-2. Get the ID of the regular Course list block
-    SELECT id FROM `classes_michael`.`mdl_block` where name ='course_list';
-3. Update all instances of course_list blocks to be strathcourse_list blocks
-    UPDATE mdl_block_instance bi SET bi.blockid = <id from 1.> WHERE bi.blockid = <id from 2.>;
 
-You should repeat this with the mdl_block_pinned table if you want to update sticky blocks.
+        SELECT id FROM `classes_michael`.`mdl_block` where name ='strathcourse_list';
+2. Get the ID of the regular Course list block
+
+        SELECT id FROM `classes_michael`.`mdl_block` where name ='course_list';
+3. Update all instances of `course_list blocks` to be `strathcourse_list block`
+
+        UPDATE mdl_block_instance bi SET bi.blockid = <id from 1.> WHERE bi.blockid = <id from 2.>;
+
+You should repeat this with the `mdl_block_pinned` table if you want to update sticky blocks.
