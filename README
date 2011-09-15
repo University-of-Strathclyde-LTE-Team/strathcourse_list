@@ -1,0 +1,12 @@
+README
+======
+
+This a replacement for the My Courses block in Moodle 1.9.
+
+Features
+--------
+
+* User Preference to display either list of courses user is enrolled on or a search box
+* Observes Admin settings to display admin's courses or all courses
+* Can fetch a list of classes for a user from another Moodle server for accessing archived classes
+(this is Strathclyde specific feature and requires an web service to be available on the archive server).
