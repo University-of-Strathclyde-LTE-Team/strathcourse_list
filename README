@@ -29,3 +29,4 @@ The following SQL statements *should* cause all My Courses blocks to change...us
 3. Update all instances of course_list blocks to be strathcourse_list blocks
     UPDATE mdl_block_instance bi SET bi.blockid = <id from 1.> WHERE bi.blockid = <id from 2.>;
 
+You should repeat this with the mdl_block_pinned table if you want to update sticky blocks.
